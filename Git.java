@@ -5,6 +5,7 @@ import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
+import java.nio.file.StandardCopyOption;
 
 public class Git {
 
@@ -57,14 +58,23 @@ public class Git {
         return HexFormat.of().formatHex(hash);
     }
 
+    public static void createBlob(String filePath) throws IOException {
+        String hash = hashFile(filePath);
+
+        Path originalPath = Path.of(filePath);
+        Path blobPath = Path.of("git", "objects", hash);
+
+        Files.copy(originalPath, blobPath, StandardCopyOption.REPLACE_EXISTING);
+    }
+
     public static void main(String[] args) {
         Git repository = new Git();
 
         try {
             repository.makeGitRepository();
-            System.out.println(hashFile("git/test.txt"));
+            createBlob("git/test.txt");
         } catch (IOException e) {
-            System.err.println("Could not initialize repository: " + e.getMessage());
+            System.err.println("Something happened:" + e.getMessage());
         }
     }
 }
