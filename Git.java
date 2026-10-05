@@ -67,12 +67,27 @@ public class Git {
         Files.copy(originalPath, blobPath, StandardCopyOption.REPLACE_EXISTING);
     }
 
+    public static void updateIndex(String filePath) throws IOException {
+        String hash = hashFile(filePath);
+        String entry = hash + " " + filePath;
+
+        Path indexPath = Path.of("git", "index");
+        String currentContents = Files.readString(indexPath);
+
+        if (currentContents.isEmpty()) {
+            Files.writeString(indexPath, entry);
+        } else {
+            Files.writeString(indexPath, currentContents + "\n" + entry);
+        }
+    }
+
     public static void main(String[] args) {
         Git repository = new Git();
 
         try {
             repository.makeGitRepository();
             createBlob("git/test.txt");
+            updateIndex("git/test.txt");
         } catch (IOException e) {
             System.err.println("Something happened:" + e.getMessage());
         }
