@@ -6,10 +6,12 @@ public class Verify {
 
         try {
             repository.makeGitRepository();
-            Git.createBlob("git/sha.txt");
-            Git.updateIndex("git/sha.txt");
+            Git.updateIndexAndBlob("test.txt");
+            Git.updateIndexAndBlob("sha.txt");
+            Git.updateIndexAndBlob("duplicate.txt");
+            Git.updateIndexAndBlob("empty.txt");
         } catch (IOException e) {
-            System.err.println("Something happened:" + e.getMessage());
+            System.err.println("Something happened: " + e.getMessage());
         }
     }
 }

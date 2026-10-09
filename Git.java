@@ -1,14 +1,18 @@
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.HexFormat;
 import java.nio.file.StandardCopyOption;
 
 public class Git {
-
 
     public void makeGitRepository() throws IOException {
         Path folderPath = Paths.get("git");
@@ -72,13 +76,30 @@ public class Git {
         String entry = hash + " " + filePath;
 
         Path indexPath = Path.of("git", "index");
-        String currentContents = Files.readString(indexPath);
-
-        if (currentContents.isEmpty()) {
-            Files.writeString(indexPath, entry);
-        } else {
-            Files.writeString(indexPath, currentContents + "\n" + entry);
+        ArrayList<String> indexLines = new ArrayList<String>();
+        BufferedReader indexReader = new BufferedReader(new FileReader(indexPath.toString()));
+        String contents = indexReader.readLine();
+        while (contents != null) {
+            if (contents.length() > 41 && contents.substring(41).equals(filePath)) {
+                contents = indexReader.readLine();
+            } else {
+                indexLines.add(contents);
+                contents = indexReader.readLine();
+            }
         }
+        indexReader.close();
+
+        indexLines.add(entry);
+        StringBuilder newIndex = new StringBuilder(indexLines.get(0));
+        for (int i = 1; i < indexLines.size(); i++) {
+            newIndex.append("\n" + indexLines.get(i));
+        }
+        Files.writeString(indexPath, newIndex.toString());
+    }
+
+    public static void updateIndexAndBlob(String filePath) throws IOException {
+        updateIndex(filePath);
+        createBlob(filePath);
     }
 
     public static void main(String[] args) {
@@ -86,10 +107,12 @@ public class Git {
 
         try {
             repository.makeGitRepository();
-            createBlob("git/test.txt");
-            updateIndex("git/test.txt");
+            updateIndexAndBlob("test.txt");
+            updateIndexAndBlob("sha.txt");
+            updateIndexAndBlob("duplicate.txt");
+            updateIndexAndBlob("empty.txt");
         } catch (IOException e) {
-            System.err.println("Something happened:" + e.getMessage());
+            System.err.println("Something happened: " + e.getMessage());
         }
     }
 }
