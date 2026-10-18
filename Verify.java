@@ -6,7 +6,7 @@ public class Verify {
 
         try {
             repository.makeGitRepository();
-            System.out.println(Git.createTree("test_folder/test_test_folder"));
+            System.out.println(Git.createTree(""));
         } catch (IOException e) {
             System.err.println("Something happened: " + e.getMessage());
         }
