@@ -6,10 +6,7 @@ public class Verify {
 
         try {
             repository.makeGitRepository();
-            Git.updateIndexAndBlob("test.txt");
-            Git.updateIndexAndBlob("sha.txt");
-            Git.updateIndexAndBlob("duplicate.txt");
-            Git.updateIndexAndBlob("empty.txt");
+            System.out.println(Git.createTree("test_folder/test_test_folder"));
         } catch (IOException e) {
             System.err.println("Something happened: " + e.getMessage());
         }

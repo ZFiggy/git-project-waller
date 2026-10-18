@@ -10,6 +10,9 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HexFormat;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.nio.file.StandardCopyOption;
 
 public class Git {
@@ -100,6 +103,58 @@ public class Git {
     public static void updateIndexAndBlob(String filePath) throws IOException {
         updateIndex(filePath);
         createBlob(filePath);
+    }
+
+    public static String createTree(String dirPath) throws IOException {
+        Path startPath = Paths.get(dirPath);
+        Stream<Path> stream = Files.walk(startPath);
+        List<Path> allFilePaths = stream.filter(Files::isRegularFile).collect(Collectors.toList());
+        for (Path filePath : allFilePaths) {
+            updateIndexAndBlob(filePath.toString());
+        }
+        stream.close();
+
+        ArrayList<String> workingList = new ArrayList<String>();
+        List<String> indexList = Files.readAllLines(Path.of("git", "index"));
+        for (int i = 0; i < indexList.size(); i++) {
+            workingList.add("blob " + indexList.get(i));
+        }
+
+        return createTree(workingList, dirPath);
+    }
+
+    public static String createTree(ArrayList<String> workingList, String dirPath) throws IOException {
+        StringBuilder treeBuilder = new StringBuilder();
+        for (String entry : workingList) {
+            String[] components = entry.split(" ", 3);
+            if (components.length != 3) {
+                throw new IllegalArgumentException("Working List made incorrectly.");
+            }
+            String type = components[0];
+            String hash = components[1];
+            String path = components[2];
+            String fileParent;
+            String fileName;
+            if (path.contains("/")) {
+                fileParent = path.substring(0, path.lastIndexOf("/"));
+                fileName = path.substring(path.lastIndexOf("/") + 1);
+            } else {
+                fileParent = "";
+                fileName = path;
+            }
+            if (fileParent.equals(dirPath)) {
+                if (treeBuilder.length() > 0) {
+                    treeBuilder.append("\n");
+                }
+                treeBuilder.append(type).append(" ").append(hash).append(" ").append(fileName);
+            }
+        }
+
+        Path treePath = Path.of("git", "objects", "tempName");
+        Files.writeString(treePath, treeBuilder.toString());
+        String treeHash = hashFile(treePath.toString());
+        Files.move(treePath, Path.of("git", "objects", treeHash), StandardCopyOption.REPLACE_EXISTING);
+        return treeHash;
     }
 
     public static void main(String[] args) {
